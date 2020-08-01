@@ -9,7 +9,7 @@
 		ln -s '$input3' S2.csv &&
 		ln -s '$input4' SBF2.csv &&
 		
-		Rscript '$__tool_directory__/Difference finder for GalaxyP july 2020.R'
+		Rscript '$__tool_directory__/Difference finder for GalaxyP.R'
     ]]></command>
     <inputs>
 		<param format="csv" name="input1" type="data" label="First Substrate Set"/>
