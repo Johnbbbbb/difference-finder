@@ -1,51 +1,50 @@
+#this brings in the input files
 FirstSubstrateSet<- read.csv("S1.csv", stringsAsFactors=FALSE,colClasses = "character")
 Firstsubbackfreq<- read.csv("SBF1.csv", header=FALSE, stringsAsFactors=FALSE)
 SecondSubstrateSet<- read.csv("S2.csv", stringsAsFactors=FALSE,colClasses = "character")
 Secondsubbackfreq<- read.csv("SBF2.csv", header=FALSE, stringsAsFactors=FALSE)
-#this brings in the input files
 
 
+#this names the output files
 First_unshared_motifs_table<-"1RS.csv"
 First_unshared_subbackfreq<-"1RSBF.csv"
 Second_unshared_motifs_table<-"2RS.csv"
 Second_unshared_subbackfreq<-"2RSBF.csv"
-#this names the output files
 
+#this creates the headers which comes from the input files, so that the output files can be given this header so that they will look identical to the input files
 EmptySubHeader<-colnames(FirstSubstrateSet)
 EmptySubHeader<-matrix(EmptySubHeader, nrow=1)
 EmptySBFHeader<-Firstsubbackfreq[,1]
-#this creates the headers which comes from the input files, so that the output files can be given this header so that they will look identical to the input files
 
 
-#the below code is used to ensure that all phospho-amino acids get marked with an "x" to denote their phosphoness
+#ensure that all phospho-amino acids get marked with an "x" to denote their phosphoness
 FirstCentralLetters<-FirstSubstrateSet[,11]
 SecondCentralLetters<-SecondSubstrateSet[,11]
-#the phospho AAs are always found in position 12, so take them from there
 
+#use an 3 apply functions to create vectors, these vetors have true values where they find an S, T or Y.  
+#so FirstEsses has a True anywhere it sees an S, and FirstTees has a True anywhere it sees a Y
 FirstEsses<-sapply(FirstCentralLetters, grepl, pattern="S", ignore.case=TRUE)
 FirstTees<-sapply(FirstCentralLetters, grepl, pattern="T", ignore.case=TRUE)
 FirstWys<-sapply(FirstCentralLetters, grepl, pattern="Y", ignore.case=TRUE)
-#use an 3 apply functions to create vectors, these vetors have true values where they find an S, T or Y.  
-#so FirstEsses has a True anywhere it sees an S, and FirstTees has a True anywhere it sees a Y
 
+#do the same for the second substrate set's central letters
 SecondEsses<-sapply(SecondCentralLetters, grepl, pattern="S", ignore.case=TRUE)
 SecondTees<-sapply(SecondCentralLetters, grepl, pattern="T", ignore.case=TRUE)
 SecondWys<-sapply(SecondCentralLetters, grepl, pattern="Y", ignore.case=TRUE)
-#do the same for the second substrate set's central letters
 
+#where there is a True value in FirstEsses, replace that value in the original substrate set with an xS.  This is because there was originally an S in that
+#position, and the programs wants that S to be marked with an x, denoting phospho
 FirstCentralLetters<-replace(FirstCentralLetters,FirstEsses,"xS")
 FirstCentralLetters<-replace(FirstCentralLetters,FirstTees,"xT")
 FirstCentralLetters<-replace(FirstCentralLetters,FirstWys,"xY")
-#where there is a True value in FirstEsses, replace that value in the original substrate set with an xS.  This is because there was originally an S in that
-#position, and I want that S to be marked with an x, denoting phospho
 
 SecondCentralLetters<-replace(SecondCentralLetters,SecondEsses,"xS")
 SecondCentralLetters<-replace(SecondCentralLetters,SecondTees,"xT")
 SecondCentralLetters<-replace(SecondCentralLetters,SecondWys,"xY")
 
+#then put these x-marked letters back where they were found, in position 11 of the substrate sets
 FirstCentralLetters->FirstSubstrateSet[,11]
 SecondCentralLetters->SecondSubstrateSet[,11]
-#then I put these x-marked letters back where I found them, in position 11 of the substrate sets
 
 FTLwtmotifs=matrix(,nrow = nrow(FirstSubstrateSet),ncol=1)
 FTLwtAccessionNumbers=matrix(,nrow = nrow(FirstSubstrateSet),ncol=1)
@@ -57,23 +56,21 @@ for (i in 1:nrow(FirstSubstrateSet)){
   leftspaces<-c()
   rightspaces<-c()
   
+  #position itself tells one how much is to the left of that X by what it's number is.  x at position 4 tells me that there are
+  #just 3 letters to the left of x
   YYYmotif <- unlist(strsplit(FTLwtletters, split = ""))
   YYYposition <- match(x = "x", table = YYYmotif)
-  #position itself tells me how much is to the left of that X by what it's number is.  x at position 4 tells me that there are
-  #just 3 letters to the left of x
   
-  YYYLettersToTheLeft <- YYYposition - 1
   #how many letters to the right SHOULD just be length(motif)-position-1 if it's 5 long and x is at 3 then Y is at 4 and there is
   #just 1 spot to the right of Y so LettersToTheRight<-1 because 5-3-1=1
+  YYYLettersToTheLeft <- YYYposition - 1
   YYYLettersToTheRight <- length(YYYmotif) - YYYposition - 1
-  #then sanity check, we're currently looking only at +/-4, but this spot allows for up to +/- 7 as well, just depends on what the
-  #variable the user puts in is
   
   
   if (YYYLettersToTheLeft < 7 | YYYLettersToTheRight < 7) {
+    #add blank spaces if the motif has less than 4 letters to the left/right
     leftspaces<-rep(" ",times=(7-YYYLettersToTheLeft))
     rightspaces<-rep(" ",times=7-(YYYLettersToTheRight))
-    #add blank spaces if the motif has less than 4 letters to the left/right
     motif<-c(leftspaces,YYYmotif,rightspaces)
     #save that motif, which is the Y and +/- 4 amino acids, including truncation
     motif<-motif[!motif %in% "x"]
@@ -111,21 +108,13 @@ for (i in 1:nrow(SecondSubstrateSet)){
   
   YYYmotif <- unlist(strsplit(D835letters, split = ""))
   YYYposition <- match(x = "x", table = YYYmotif)
-  #position itself tells me how much is to the left of that X by what it's number is.  x at position 4 tells me that there are
-  #just 3 letters to the left of x
   
   YYYLettersToTheLeft <- YYYposition - 1
-  #how many letters to the right SHOULD just be length(motif)-position-1 if it's 5 long and x is at 3 then Y is at 4 and there is
-  #just 1 spot to the right of Y so LettersToTheRight<-1 because 5-3-1=1
   YYYLettersToTheRight <- length(YYYmotif) - YYYposition - 1
-  #then sanity check, we're currently looking only at +/-4, but this spot allows for up to +/- 7 as well, just depends on what the
-  #variable the user puts in is
   if (YYYLettersToTheLeft < 7 | YYYLettersToTheRight < 7) {
     leftspaces<-rep(" ",times=(7-YYYLettersToTheLeft))
     rightspaces<-rep(" ",times=7-(YYYLettersToTheRight))
-    #add blank spaces if the motif has less than 4 letters to the left/right
     motif<-c(leftspaces,YYYmotif,rightspaces)
-    #save that motif, which is the Y and +/- 4 amino acids, including truncation
     motif<-motif[!motif %in% "x"]
     motif<-paste(motif, sep="", collapse="")
     D835letters<-motif
@@ -135,9 +124,7 @@ for (i in 1:nrow(SecondSubstrateSet)){
   
   if(YYYLettersToTheLeft>6 && YYYLettersToTheRight>6){
     motif<-YYYmotif
-    #add blank spaces if the motif has less than 4 letters to the left/right
     motif<-c(leftspaces,YYYmotif,rightspaces)
-    #save that motif, which is the Y and +/- 4 amino acids, including truncation
     motif<-motif[!motif %in% "x"]
     motif<-paste(motif, sep="", collapse="")
     D835letters<-motif
